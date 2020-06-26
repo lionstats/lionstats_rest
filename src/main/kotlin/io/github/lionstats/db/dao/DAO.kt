@@ -10,7 +10,11 @@ interface DAOPojo<T> {
 }
 
 interface DAO<R : TableRecord<R>, P : DAOPojo<T>, T> {
-    fun defaultReturnFields(): List<SelectFieldOrAsterisk>
+    val dslContext: DSLContext
+
+    fun defaultReturnFields(): List<SelectFieldOrAsterisk> {
+        return listOf(getTable().asterisk())
+    }
 
     fun insertReturnFields(): List<SelectFieldOrAsterisk> = defaultReturnFields()
     fun updateReturnFields(): List<SelectFieldOrAsterisk> = defaultReturnFields()
@@ -101,5 +105,8 @@ interface DAO<R : TableRecord<R>, P : DAOPojo<T>, T> {
     fun getTable(): Table<R>
     fun getPrimaryKeyClass(): TableField<R, T>
     fun getPojoClass(): Class<P>
-    fun createRecord(pojo: R): R
+
+    fun createRecord(pojo: R): R = dslContext.use {
+        it.newRecord(getTable(), pojo)
+    }
 }
