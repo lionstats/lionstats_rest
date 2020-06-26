@@ -1,0 +1,69 @@
+import org.flywaydb.gradle.task.FlywayMigrateTask
+
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.71'
+    id 'org.flywaydb.flyway' version '6.5.0'
+    id 'nu.studer.jooq' version '4.2'
+}
+
+group 'io.github.lionstats'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.postgresql:postgresql:42.2.14'
+    jooqRuntime 'org.postgresql:postgresql:42.2.14'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+task migratePostgreSQL(type: FlywayMigrateTask) {
+    url = project.properties['postgresql.url']
+    user = project.properties['postgresql.username']
+    password = project.properties['postgresql.password']
+}
+
+jooq {
+    version = '3.13.2'
+    edition = 'OSS'
+    generateSchemaSourceOnCompilation = true
+    postgreSQL(sourceSets.main) {
+        jdbc {
+            driver = 'org.postgresql.Driver'
+            url = project.properties['postgresql.url']
+            user = project.properties['postgresql.username']
+            password = project.properties['postgresql.password']
+        }
+        generator {
+            name = 'org.jooq.codegen.DefaultGenerator'
+            strategy {
+                name = 'org.jooq.codegen.DefaultGeneratorStrategy'
+            }
+            database {
+                name = 'org.jooq.meta.postgres.PostgresDatabase'
+                inputSchema = 'public'
+            }
+            generate {
+                relations = true
+                deprecated = false
+                records = true
+                immutablePojos = true
+                fluentSetters = true
+            }
+            target {
+                packageName = 'io.github.lionstats.db.postgresql'
+                directory = 'src/main/kotlin'
+            }
+        }
+    }
+}
